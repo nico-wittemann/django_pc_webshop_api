@@ -55,4 +55,6 @@ render.yaml
 *.orig
 *.rej
 
+# Stripe CLI
+stripe.exe
 
