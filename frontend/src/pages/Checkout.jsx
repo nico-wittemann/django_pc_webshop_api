@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useCart } from '../context/CartContext';
+import { fetchWithAuth } from '../utils/fetchWithAuth';
 
 function Checkout() {
   const { cartItems, total, clearCart } = useCart();
@@ -8,7 +9,7 @@ function Checkout() {
   const [iban, setIban] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
-  const [paymentInfo, setPaymentInfo] = useState(null); // 👈 NEU
+  const [paymentInfo, setPaymentInfo] = useState(null);
 
   const handlePayment = async (e) => {
     e.preventDefault();
@@ -17,30 +18,25 @@ function Checkout() {
     setPaymentInfo(null);
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/pay/', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`  // 👈 NEU!
-  },
-  body: JSON.stringify({
-    name,
-    email,
-    iban,
-    items: cartItems,
-    total,
-  }),
-});
-
+      const response = await fetchWithAuth('http://127.0.0.1:8000/pay/', {
+        method: 'POST',
+        body: JSON.stringify({
+          name,
+          email,
+          iban,
+          items: cartItems,
+          total,
+        }),
+      });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.detail || 'Payment failed');
+        throw new Error(data.error || data.detail || 'Payment failed');
       }
 
       setMessage('✅ Payment initiated successfully!');
-      setPaymentInfo(data);         // 👈 Zeigt Details im UI an
+      setPaymentInfo(data);
       clearCart();
     } catch (err) {
       setMessage(`❌ ${err.message}`);
@@ -94,7 +90,6 @@ function Checkout() {
           </p>
         )}
 
-        {/* ✅ Anzeige von Order-Daten bei Erfolg */}
         {paymentInfo && (
           <div className="mt-6 bg-[#0f172a] border border-cyan-700 rounded-lg p-4 space-y-2 text-sm">
             <p><span className="text-gray-400">Order ID:</span> <span className="text-white">{paymentInfo.order_id}</span></p>
