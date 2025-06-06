@@ -4,16 +4,36 @@ class Order(models.Model):
     id = models.AutoField(primary_key=True)
     user = models.ForeignKey('users.User', on_delete=models.CASCADE)
     total_price = models.FloatField()
-    status = models.CharField(max_length=20)
     created_at = models.DateTimeField(auto_now_add=True)
-    payment_method = models.CharField(max_length=50)
-    payment_status = models.CharField(max_length=20)
     currency = models.CharField(max_length=3, choices=[
         ('EUR', 'Euro'),
         ('USD', 'US-Dollar'),
         ('GBP', 'British Pound'),
     ], default='EUR')
 
+    # Payment-related fields
+    is_paid = models.BooleanField(default=False)
+    payment_intent_id = models.CharField(max_length=255, blank=True, null=True)
+
+    PAYMENT_METHOD_CHOICES = [
+        ('sepa_debit', 'SEPA Direct Debit'),
+    ]
+    payment_method = models.CharField(
+        max_length=20,
+        choices=PAYMENT_METHOD_CHOICES,
+        default='sepa_debit'
+    )
+
+    PAYMENT_STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('succeeded', 'Succeeded'),
+        ('failed', 'Failed'),
+    ]
+    payment_status = models.CharField(
+        max_length=20,
+        choices=PAYMENT_STATUS_CHOICES,
+        default='pending'
+    )
 
     def __str__(self):
         return f"Order {self.id}"

@@ -4,11 +4,19 @@ from .serializers import OrderSerializer, Order_ItemSerializer
 from rest_framework.permissions import IsAuthenticated
 from .permissions import IsOrderOwner, IsOrder_Item_Owner
 
+#Payment
 from django.conf import settings
 import stripe
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.response import Response
 import time
+
+#Webhook
+import json
+from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse
+from .models import Order
+from django.core.mail import send_mail
 
 
 
@@ -52,6 +60,11 @@ class OrderPaymentViewSet(GenericViewSet):
             # 1. Retrieve the order from the database
             order = Order.objects.get(id=order_id, user=request.user)
 
+            #
+            # Prevent duplicate payment
+            if order.is_paid:
+                return Response({"error": "This order has already been paid."}, status=400)
+
             # 2. Create a SEPA Direct Debit PaymentMethod with Stripe
             payment_method = stripe.PaymentMethod.create(
                 type="sepa_debit",
@@ -74,11 +87,63 @@ class OrderPaymentViewSet(GenericViewSet):
                     }
                 }
             )
-
-            # 4. Mark the order as paid
-            order.is_paid = True
+            # 4. Save the intent ID to the order
+            order.payment_intent_id = intent.id
+            order.payment_status = "pending"
             order.save()
 
             return Response({"status": "success", "payment_intent": intent.id})
         except Exception as e:
             return Response({"error": str(e)}, status=400)
+
+
+
+#Webhook
+@csrf_exempt
+def stripe_webhook(request):
+    payload = request.body
+    sig_header = request.META.get("HTTP_STRIPE_SIGNATURE")
+    endpoint_secret = settings.STRIPE_WEBHOOK_SECRET
+
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, endpoint_secret
+        )
+    except ValueError:
+        return HttpResponse(status=400)  # Invalid payload
+    except stripe.error.SignatureVerificationError:
+        return HttpResponse(status=400)  # Invalid signature
+
+    print(f"✅ Event received: {event['type']}")
+
+    #  Handle successful payment
+    if event["type"] == "payment_intent.succeeded":
+        intent = event["data"]["object"]
+        intent_id = intent["id"]
+
+        try:
+            order = Order.objects.get(payment_intent_id=intent_id)
+            order.is_paid = True
+            order.payment_status = "succeeded"
+            order.save()
+            print(f"✅ Order {order.id} marked as paid via webhook.")
+
+            #  Send confirmation email
+            send_mail(
+                subject="Payment received – Thank you!",
+                message=(
+                    f"Hi {order.user.username},\n\n"
+                    f"we have received your payment for Order #{order.id}.\n"
+                    f"Total: {order.total_price} {order.currency}\n\n"
+                    "Thank you for your purchase!"
+                ),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[order.user.email],
+                fail_silently=False,
+            )
+            print(f"📧 Confirmation email sent to {order.user.email}")
+
+        except Order.DoesNotExist:
+            print(f"⚠️ No order found with intent_id {intent_id}")
+
+    return HttpResponse(status=200)
