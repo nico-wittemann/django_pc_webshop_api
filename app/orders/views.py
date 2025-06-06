@@ -49,51 +49,68 @@ class Order_ItemViewSet(viewsets.ModelViewSet):
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 class OrderPaymentViewSet(GenericViewSet):
+    permission_classes = [IsAuthenticated]
     def create(self, request):
         data = request.data
         try:
-            order_id = data.get("order_id")
             name = data.get("name")
             email = data.get("email")
             iban = data.get("iban")
+            total = data.get("total")
+            items = data.get("items", [])
 
-            # 1. Retrieve the order from the database
-            order = Order.objects.get(id=order_id, user=request.user)
+            if not name or not email or not iban or not total:
+                return Response({"error": "Missing payment data."}, status=400)
 
-            #
-            # Prevent duplicate payment
-            if order.is_paid:
-                return Response({"error": "This order has already been paid."}, status=400)
+            # 1. Create Order in DB
+            order = Order.objects.create(
+                user=request.user,
+                total_price=total,
+                payment_status="pending",
+                payment_method="sepa_debit",
+            )
 
-            # 2. Create a SEPA Direct Debit PaymentMethod with Stripe
+            # Optional: save items in Order_Item here if nötig
+
+            # 2. Create PaymentMethod
             payment_method = stripe.PaymentMethod.create(
                 type="sepa_debit",
                 sepa_debit={"iban": iban},
                 billing_details={"name": name, "email": email}
             )
 
-            # 3. Create a PaymentIntent using this PaymentMethod
+            # 3. Create PaymentIntent
             intent = stripe.PaymentIntent.create(
-                amount=int(order.total_price * 100),  # Amount in cents
+                amount=int(float(total) * 100),
                 currency="eur",
                 payment_method=payment_method.id,
-                payment_method_types=["sepa_debit"],  # Restrict to SEPA Direct Debit only
-                confirm=True,  # Immediately attempt to confirm the payment
-                mandate_data={  # Provide SEPA Direct Debit mandate information
+                payment_method_types=["sepa_debit"],
+                confirm=True,
+                mandate_data={
                     "customer_acceptance": {
-                        "type": "offline",  # Customer accepted the mandate outside of Stripe
-                        "accepted_at": int(time.time()),  # Current timestamp
+                        "type": "offline",
+                        "accepted_at": int(time.time()),
                         "offline": {}
                     }
                 }
             )
-            # 4. Save the intent ID to the order
+
+            # 4. Save Stripe ID in order
             order.payment_intent_id = intent.id
-            order.payment_status = "pending"
             order.save()
 
-            return Response({"status": "success", "payment_intent": intent.id})
+            return Response({
+                "status": "success",
+                "order_id": order.id,
+                "payment_intent": intent.id,
+                "payment_status": order.payment_status
+            })
+
+
         except Exception as e:
+            import traceback
+            print("❌ Payment error:", str(e))
+            traceback.print_exc()
             return Response({"error": str(e)}, status=400)
 
 
