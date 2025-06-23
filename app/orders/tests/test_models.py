@@ -2,6 +2,11 @@ import pytest
 from orders.models import Order
 from django.contrib.auth import get_user_model
 
+
+import os
+print("DJANGO_SETTINGS_MODULE =", os.environ.get("DJANGO_SETTINGS_MODULE"))
+
+
 User = get_user_model()
 
 @pytest.mark.django_db
