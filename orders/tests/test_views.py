@@ -1,5 +1,5 @@
 import pytest
-import random
+import uuid
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 from orders.models import Order, Order_Item
@@ -8,15 +8,15 @@ from pc_components.models import Pc, Component
 User = get_user_model()
 
 def random_username(prefix="user"):
-    return f"{prefix}_{random.randint(1000, 9999)}"
+    return f"{prefix}_{uuid.uuid4().hex[:8]}"
 
 @pytest.mark.django_db
 def test_user_sees_only_own_orders():
     user1 = User.objects.create_user(username=random_username("nico"), password="123")
     user2 = User.objects.create_user(username=random_username("puma"), password="123")
 
-    Order.objects.create(user=user1, total_price=100, payment_method="stripe", payment_status="unpaid", currency="EUR")
-    Order.objects.create(user=user2, total_price=200, payment_method="stripe", payment_status="unpaid", currency="EUR")
+    Order.objects.create(user=user1, total_price=100, payment_method="sepa_debit", payment_status="pending", currency="EUR")
+    Order.objects.create(user=user2, total_price=200, payment_method="sepa_debit", payment_status="pending", currency="EUR")
 
     client = APIClient()
     client.force_authenticate(user=user1)
@@ -24,7 +24,7 @@ def test_user_sees_only_own_orders():
     response = client.get("/orders/")
     assert response.status_code == 200
     assert len(response.data) == 1
-    assert response.data[0]["total_price"] == "100.00"
+    assert float(response.data[0]["total_price"]) == 100.0
 
 @pytest.mark.django_db
 def test_user_can_create_order():
@@ -34,14 +34,14 @@ def test_user_can_create_order():
 
     data = {
         "total_price": 123.45,
-        "payment_method": "stripe",
-        "payment_status": "unpaid",
+        "payment_method": "sepa_debit",
+        "payment_status": "pending",
         "currency": "EUR"
     }
 
-    response = client.post("/orders/", data)
+    response = client.post("/orders/", data, format="json")
     assert response.status_code == 201
-    assert response.data["total_price"] == "123.45"
+    assert float(response.data["total_price"]) == 123.45
 
 @pytest.mark.django_db
 def test_user_can_create_order_item():
@@ -50,8 +50,7 @@ def test_user_can_create_order_item():
     pc = Pc.objects.create(name="MyPC", is_customized=False)
     component = Component.objects.create(name="RAM", price=50)
 
-    order = Order.objects.create(user=user, total_price=100, payment_method="stripe", payment_status="unpaid",
-                                 currency="EUR")
+    order = Order.objects.create(user=user, total_price=100, payment_method="sepa_debit", payment_status="pending", currency="EUR")
 
     client = APIClient()
     client.force_authenticate(user=user)
@@ -60,6 +59,7 @@ def test_user_can_create_order_item():
         "order": order.id,
         "order_type": "pc",
         "pc_id": pc.id,
+        "quantity": 1
     }
 
     response = client.post("/order_items/", data)
