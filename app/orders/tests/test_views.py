@@ -5,13 +5,10 @@ from rest_framework.test import APIClient
 from orders.models import Order, Order_Item
 from pc_components.models import Pc, Component
 
-
 User = get_user_model()
-
 
 def random_username(prefix="user"):
     return f"{prefix}_{random.randint(1000, 9999)}"
-
 
 @pytest.mark.django_db
 def test_user_sees_only_own_orders():
@@ -24,11 +21,10 @@ def test_user_sees_only_own_orders():
     client = APIClient()
     client.force_authenticate(user=user1)
 
-    response = client.get("/api/orders/")
+    response = client.get("/orders/")
     assert response.status_code == 200
     assert len(response.data) == 1
     assert response.data[0]["total_price"] == "100.00"
-
 
 @pytest.mark.django_db
 def test_user_can_create_order():
@@ -43,18 +39,15 @@ def test_user_can_create_order():
         "currency": "EUR"
     }
 
-    response = client.post("/api/orders/", data)
+    response = client.post("/orders/", data)
     assert response.status_code == 201
     assert response.data["total_price"] == "123.45"
-
 
 @pytest.mark.django_db
 def test_user_can_create_order_item():
     user = User.objects.create_user(username=random_username("nico"), password="123")
 
     pc = Pc.objects.create(name="MyPC", is_customized=False)
-
-    # ✅ Minimal valid Component ohne category und brand
     component = Component.objects.create(name="RAM", price=50)
 
     order = Order.objects.create(user=user, total_price=100, payment_method="stripe", payment_status="unpaid",
@@ -69,9 +62,8 @@ def test_user_can_create_order_item():
         "pc_id": pc.id,
     }
 
-    response = client.post("/api/order_items/", data)
+    response = client.post("/order_items/", data)
     assert response.status_code == 201
-
 
 @pytest.mark.django_db
 def test_order_payment_success():
@@ -90,10 +82,9 @@ def test_order_payment_success():
         "items": []
     }
 
-    response = client.post("/api/order_payment/", data, format="json")
+    response = client.post("/pay/", data, format="json")
     assert response.status_code in [200, 400]
     assert "order_id" in response.data or "error" in response.data
-
 
 @pytest.mark.django_db
 def test_order_payment_missing_data_returns_error():
@@ -101,6 +92,6 @@ def test_order_payment_missing_data_returns_error():
     client = APIClient()
     client.force_authenticate(user=user)
 
-    response = client.post("/api/order_payment/", data={}, format="json")
+    response = client.post("/pay/", data={}, format="json")
     assert response.status_code == 400
     assert "error" in response.data

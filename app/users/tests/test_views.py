@@ -10,7 +10,7 @@ def test_create_user():
         "email": "nico@example.com",
         "password": "secretpass"
     }
-    response = client.post("/api/users/", data, format="json")
+    response = client.post("/users/", data, format="json")
     assert response.status_code == 201
     assert User.objects.filter(username="nico").exists()
 
