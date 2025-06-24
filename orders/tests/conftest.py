@@ -6,5 +6,5 @@ import django
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
 # Correct path to settings.py
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "app.app.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "app.settings")
 django.setup()
