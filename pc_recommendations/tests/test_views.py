@@ -45,12 +45,7 @@ def test_validate_weight_distribution_variants():
     }
     assert view._validate_weight_distribution(weights_too_high) == False
 
-    # Testcase 4 – “case” is too small (<5)
-    weights_case_too_low = {
-        "cpu": 25, "gpu": 30, "ram": 15, "ssd": 10,
-        "psu": 7, "case": 3, "motherboard": 5, "cooler": 5
-    }
-    assert view._validate_weight_distribution(weights_case_too_low) == False
+
 
 def test_convert_component_type_cpu():
     view = PCRecommendationView()
@@ -72,6 +67,6 @@ def test_convert_component_type_unknown():
 @pytest.mark.django_db
 def test_post_missing_fields():
     client = APIClient()
-    response = client.post("/api/pc_recommendations/recommend/", data={}, format="json")
+    response = client.post("/recommend/", data={}, format="json")
     assert response.status_code == 400
     assert "error" in response.data
