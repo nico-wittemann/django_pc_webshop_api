@@ -6,6 +6,26 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: shop_api_admin
+          POSTGRES_PASSWORD: yourpassword
+          POSTGRES_DB: django_pc_shop_api
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DJANGO_SETTINGS_MODULE: app.settings
+      DATABASE_ADMIN_PASSWORD: yourpassword
+      SECRET_KEY: testsecretkey
+      DEBUG: "True"
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -21,8 +41,4 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run Tests
-        env:
-          DJANGO_SETTINGS_MODULE: app.settings  # <--- PASST, wenn settings.py in /app liegt
-        run: |
-          export PYTHONPATH=$PYTHONPATH:./app
-          pytest --disable-warnings --maxfail=1
+        run: pytest --disable-warnings --maxfail=1
