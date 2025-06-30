@@ -118,13 +118,12 @@ The API documentation is available at the following URLs:
 
 ```
 django_pc_webshop_api/
-├── app/                    # Main application directory
-│   ├── app/               # Django project configuration
-│   ├── users/             # User management
-│   ├── pc_components/     # PC components
-│   ├── pc_recommendations/# AI-powered PC recommendations
-│   ├── orders/           # Orders
-│   └── static/           # Static files
+├── app/               # Django project configuration
+├── users/             # User management
+├── pc_components/     # PC components
+├── pc_recommendations/# AI-powered PC recommendations
+├── orders/           # Orders
+└── static/           # Static files
 ├── frontend/              # React Frontend
 │   ├── src/              # Source code
 │   ├── public/           # Public files
@@ -192,6 +191,29 @@ python app/manage.py migrate
 cd frontend
 npm run build
 ```
+
+## ✅ Continuous Integration (CI)
+
+This project uses GitHub Actions to run tests on every push and pull request.
+
+- ✅ Runs on Ubuntu with PostgreSQL 14
+- ✅ Installs dependencies from `requirements.txt`
+- ✅ Runs migrations (`python manage.py migrate`)
+- ✅ Executes `pytest` for all apps
+
+**Workflow config:** `.github/workflows/tests.yml`
+
+### ▶️ Run tests locally
+
+```bash
+# All tests
+pytest
+
+# Specific app
+pytest users/tests
+pytest orders/tests
+pytest pc_components/tests
+pytest pc_recommendations/tests
 
 ## 🤝 Contributing
 
