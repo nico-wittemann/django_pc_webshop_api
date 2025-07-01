@@ -1,6 +1,18 @@
 version: "3.9"
 
 services:
+  db:
+    image: postgres:14
+    container_name: postgres_db
+    environment:
+      POSTGRES_DB: django_pc_shop_api
+      POSTGRES_USER: shop_api_admin
+      POSTGRES_PASSWORD: locked123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
   web:
     build: .
     container_name: django_web
@@ -9,3 +21,14 @@ services:
       - "8000:8000"
     volumes:
       - .:/code
+    depends_on:
+      - db
+    environment:
+      - DB_NAME=django_pc_shop_api
+      - DB_USER=shop_api_admin
+      - DB_PASSWORD=locked123
+      - DB_HOST=db
+      - DB_PORT=5432
+
+volumes:
+  postgres_data:

@@ -107,11 +107,11 @@ DATABASE_ADMIN_PASSWORD = os.getenv('DATABASE_ADMIN_PASSWORD')
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "django_pc_shop_api",
-        "USER": "shop_api_admin",
-        "PASSWORD": DATABASE_ADMIN_PASSWORD,
-        "HOST": "localhost",
-        "PORT": "5432",
+        "NAME": os.getenv("DB_NAME", "django_pc_shop_api"),
+        "USER": os.getenv("DB_USER", "shop_api_admin"),
+        "PASSWORD": os.getenv("DB_PASSWORD", "locked123"),
+        "HOST": os.getenv("DB_HOST", "db"),
+        "PORT": os.getenv("DB_PORT", "5432"),
     }
 }
 
