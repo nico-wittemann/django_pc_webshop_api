@@ -16,6 +16,7 @@ A RESTful API for a PC Components Webshop, developed with Django REST Framework 
 - CORS Support
 - Automatic API Documentation with drf-spectacular
 - Hot-Reload for fast development
+- Full Docker support with PostgreSQL
 
 ## 📋 Prerequisites
 
@@ -24,89 +25,105 @@ A RESTful API for a PC Components Webshop, developed with Django REST Framework 
 - npm (Node Package Manager)
 - pip (Python Package Manager)
 - Git (optional, for version control)
+- Docker (recommended for local development)
 
-## 🛠️ Installation
+## 🚀 Docker Setup (Recommended)
 
-1. **Clone Repository** (if using Git)
+This setup uses Docker for consistent local development with PostgreSQL.
+
+### 💡 Requirements: Docker must be installed and running
+
+### 🔄 1. Clone the project
 ```bash
-git checkout deployment
-git clone https://github.com/IhrUsername/django_pc_webshop_api.git
-cd django_pc_webshop_api
+git clone git@github.com:nico-wittemann/django_pc_webshop_api.git  
+git checkout deployment  
+cd django_pc_webshop_api  
 ```
 
-2. **Backend Setup**
-
-a) **Create and Activate Virtual Environment**
+### 🔄 2. Build and start containers
 ```bash
-# Windows
+docker compose build  
+docker compose up  
+```
+
+### 🔄 3. Run migrations
+```bash
+docker compose exec web python manage.py migrate  
+```
+
+### 🔄 4. Create superuser  
+```bash
+docker compose exec web python manage.py createsuperuser  
+```
+
+### 💻 Django will now be running at:  
+http://localhost:8000
+
+## 🧪 Manual Setup (Alternative without Docker)
+
+### a) Create and Activate Virtual Environment
+
+### Windows
+```bash
 python -m venv venv
 .\venv\Scripts\activate
+```
 
-# Linux/Mac
+### Linux/Mac
+```bash
 python3 -m venv venv
 source venv/bin/activate
 ```
 
-b) **Install Python Dependencies**
+### b) Install Python Dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-c) **Set Up Environment Variables**
-Create a `.env` file in the root directory:
-```env
+### c) Set Up Environment Variables
+
+ Create a .env file in the root directory:
+
 DATABASE_ADMIN_PASSWORD_LOCAL="YourLocalPassword"
 PYTHONPATH=D:\Python Projects\django_pc_webshop_api
-OPENAI_API_KEY="Your-OpenAI-API-Key"  # For PC recommendations
-```
+OPENAI_API_KEY="Your-OpenAI-API-Key"
 
-d) **Run Database Migrations**
+### d) Run Database Migrations
 ```bash
 python app/manage.py migrate
 ```
 
-e) **Create Superuser**
+### e) Create Superuser
 ```bash
 python app/manage.py createsuperuser
 ```
 
-f) **Collect Static Files**
+### f) Collect Static Files
 ```bash
 python app/manage.py collectstatic --noinput
 ```
 
-3. **Frontend Setup**
 
-a) **Navigate to Frontend Directory**
-```bash
-cd frontend
-```
+## 🛠️ Development Configuration
 
-b) **Install Node Dependencies**
-```bash
-npm install
-```
+### Database
+- SQLite is used as local database by default
+- If using Docker, PostgreSQL is used instead
+- Database file: db.sqlite3 (if not using Docker)
+- Create migrations: python app/manage.py makemigrations
+- Apply: python app/manage.py migrate
 
-c) **Build Frontend**
-```bash
-npm run build
-```
+### PostgreSQL with Docker
+If you're using Docker, PostgreSQL is automatically provisioned inside the container. The credentials are defined in docker-compose.yml and passed to Django via environment variables.
 
-## 🚀 Start Development Server
+### Debug Mode
+- Debug is enabled by default
+- Detailed error messages
+- Hot-Reload for code changes
 
-1. **Start Backend Server**
-```bash
-# In root directory
-python app/manage.py runserver
-```
-The backend server will be available at `http://127.0.0.1:8000`.
-
-2. **Start Frontend Development Server**
-```bash
-# In frontend directory
-npm start
-```
-The frontend server will be available at `http://localhost:3000`.
+### Static Files
+- Local development: python app/manage.py collectstatic
+- Static files are stored in app/staticfiles
 
 ## 📚 API Documentation
 
