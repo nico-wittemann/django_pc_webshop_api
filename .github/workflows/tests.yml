@@ -25,6 +25,11 @@ jobs:
       DATABASE_ADMIN_PASSWORD: yourpassword
       SECRET_KEY: testsecretkey
       DEBUG: "True"
+      DB_NAME: django_pc_shop_api
+      DB_USER: shop_api_admin
+      DB_PASSWORD: yourpassword
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
 
     steps:
       - name: Checkout code
